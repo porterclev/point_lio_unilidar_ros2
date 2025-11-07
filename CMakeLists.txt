@@ -1,87 +1,113 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(point_lio_unilidar)
+cmake_minimum_required(VERSION 3.8)
+project(lidar_slam)
 
-SET(CMAKE_BUILD_TYPE "Debug")
-
-ADD_COMPILE_OPTIONS(-std=c++14 )
-set(CMAKE_CXX_FLAGS "-std=c++14 -O3" ) 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions" )
-
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -std=c++0x -std=c++14 -fexceptions")
-
-add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
-message("DROOT_DIR = ${DROOT_DIR}")
-
-message("Current CPU archtecture: ${CMAKE_SYSTEM_PROCESSOR}")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)" )
-  include(ProcessorCount)
-  ProcessorCount(N)
-  message("Processer number:  ${N}")
-  if(N GREATER 5)
-    add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM=4)
-    message("core for MP:  3")
-  elseif(N GREATER 3)
-    math(EXPR PROC_NUM "${N} - 2")
-    add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM="${PROC_NUM}")
-    message("core for MP:  ${PROC_NUM}")
-  else()
-    add_definitions(-DMP_PROC_NUM=1)
-  endif()
-else()
-  add_definitions(-DMP_PROC_NUM=1)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+# Set policy CMP0074
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
 endif()
 
-find_package(OpenMP QUIET)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
-
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rcl REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(PCL REQUIRED)
 find_package(PythonLibs REQUIRED)
-find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
+find_package(rcl_interfaces REQUIRED)
+find_package(rcpputils REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
-  nav_msgs
-  sensor_msgs
-  roscpp
-  rospy
-  std_msgs
-  pcl_ros
-  tf
-  # livox_ros_driver
-  message_generation
-  eigen_conversions
-)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
-find_package(Eigen3 REQUIRED)
-find_package(PCL 1.8 REQUIRED)
-
-message(Eigen: ${EIGEN3_INCLUDE_DIR})
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  # comment the line when a copyright and license is added to all source files
+  set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 include_directories(
-	${catkin_INCLUDE_DIRS} 
+  ${sensor_msgs_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${visualization_msgs_INCLUDE_DIRS}
+  ${nav_msgs_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}
+  ${pcl_conversions_INCLUDE_DIRS}
+  ${rcl_interfaces_INCLUDE_DIRS}
+  ${rcl_INCLUDE_DIRS}
+  ${rclcpp_INCLUDE_DIRS}
+  ${rcpputils_INCLUDE_DIRS}
+  ${sensor_msgs_INCLUDE_DIRS}
+  ${tf2_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
+  ${tf2_geometry_msgs_INCLUDE_DIRS}
+  ${tf2_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
+  ${tf2_geometry_msgs_INCLUDE_DIRS}
+  ${tf2_eigen_INCLUDE_DIRS}
   include
 )
 
-catkin_package(
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs message_runtime
-  DEPENDS EIGEN3 PCL
-  INCLUDE_DIRS
+include_directories(
+  ${PCL_INCLUDE_DIRS} 
+  include
+  unitree_lidar_sdk/include
 )
 
-add_executable(pointlio_mapping 
-  src/laserMapping.cpp 
-  include/ikd-Tree/ikd_Tree.cpp 
+link_directories(
+  ${PCL_LIBRARY_DIRS}
+  unitree_lidar_sdk/lib/${CMAKE_SYSTEM_PROCESSOR}
+)
+
+add_executable(laser_mapping 
+src/laserMapping.cpp 
+include/ikd-Tree/ikd_Tree.cpp 
   src/parameters.cpp 
   src/preprocess.cpp 
   src/Estimator.cpp
 )
-target_link_libraries(pointlio_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES})
-target_include_directories(pointlio_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
+
+add_compile_definitions(ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
+
+ament_target_dependencies(laser_mapping
+  rclcpp
+  tf2_eigen
+  visualization_msgs  
+  nav_msgs
+  rclcpp
+  std_msgs
+  sensor_msgs
+  pcl_conversions
+  rcl_interfaces
+  rcl
+  rcpputils  
+)
+install(TARGETS
+    laser_mapping
+  DESTINATION lib/${PROJECT_NAME})
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+ament_package()
