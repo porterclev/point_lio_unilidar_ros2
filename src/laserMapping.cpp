@@ -103,7 +103,7 @@ ofstream fout_out, fout_imu_pbp;
 class LaserMappingNode : public rclcpp::Node
 {
 public:
-    LaserMappingNode() : Node("laser_mapping")
+    LaserMappingNode() : Node("laserMapping")
     {
         pubLaserCloudFullRes = this->create_publisher<sensor_msgs::msg::PointCloud2>("/pointlio/cloud_registered", 100000);
         pubLaserCloudFullRes_body = this->create_publisher<sensor_msgs::msg::PointCloud2>("/pointlio/cloud_registered_body", 100000);

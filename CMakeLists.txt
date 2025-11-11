@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(lidar_slam)
+project(point_lio_unilidar)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -77,7 +77,7 @@ link_directories(
   unitree_lidar_sdk/lib/${CMAKE_SYSTEM_PROCESSOR}
 )
 
-add_executable(laser_mapping 
+add_executable(laserMapping 
 src/laserMapping.cpp 
 include/ikd-Tree/ikd_Tree.cpp 
   src/parameters.cpp 
@@ -87,7 +87,7 @@ include/ikd-Tree/ikd_Tree.cpp
 
 add_compile_definitions(ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 
-ament_target_dependencies(laser_mapping
+ament_target_dependencies(laserMapping
   rclcpp
   tf2_eigen
   visualization_msgs  
@@ -101,7 +101,7 @@ ament_target_dependencies(laser_mapping
   rcpputils  
 )
 install(TARGETS
-    laser_mapping
+  laserMapping
   DESTINATION lib/${PROJECT_NAME})
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
