@@ -2,6 +2,7 @@
 
 ## Ros2 Jazzy Port
 This repo is a Ros2 port of the LIO SLAM algorithm used on the Unitree LiDAR L1 and L2. Still a work in progress, however it does compile on Ros2 Jazzy
+original repo: https://github.com/unitreerobotics/point_lio_unilidar
 
 TODO:
 - [ ] rviz doesn't show point cloud
